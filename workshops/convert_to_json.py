@@ -36,7 +36,23 @@ conf, sig = cal_confidence(text_with_context, 2)
 print(f"Confidence: {conf: 2f}")
 print(f"Signals: {sig}")
 
+#การลำดับศัพท์ของข้อมูล เพื่อหานํ้าหนักของข้อมูล
 
-# hello world
-# sdfsd
-# sdfsd
+def get_physic_getepreview(predicted_class, text):
+    # 0: none, 1: Patent (high complexity), 2: copyright (medium complexity)
+    weights = {0: 1, 1: 8.5, 2: 6.5}    
+    base_weight = weights.get(predicted_class, 1.0)
+    # ปรับน้ำหนักตาม keyword
+    if "ร้ายแรง" in text or "จำนวนมาก" in text:
+        base_weight = min(base_weight + 1.0, 10)
+    return base_weight  # ✅ ต้องมีเสมอ
+
+# run program
+text = "การละเมิดสิทธิบัตรรายใหญ่"
+weight = get_physic_getepreview(1, text)  # ✅ ไม่ใส่ ""
+
+print(f"Physics Gate Weight review: {weight}/10.0")
+
+
+
+    
