@@ -48,7 +48,7 @@ X_mock =  np.random.randn(12,5)
 y_mock = np.array([0]*10 + [1]*2)
 X_res, y_res = balance_legal_data(X_mock, y_mock)
 
-# 3. ฺBiLSTM
+# 3.BiLSTM
 import torch
 import torch.nn as nn
 
