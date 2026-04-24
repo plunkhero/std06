@@ -1,12 +1,33 @@
 #การตัดคำ tokenization + custom_Dict
 import re
-LEGAL_KEYWORD = ["ละเมิดสิทธิบัตร","เครื่องหมายการค้า","ลิขสิทธิ์","การกระทำความผิด","มาตรา"]
+from pythainlp.tokenize import word_tokenize
+# from pythainlp.tokenize.attacut import AttacutTokenizer
+
+
+LEGAL_KEYWORDS = ["ละเมิดสิทธิบัตร","เครื่องหมายการค้า","ลิขสิทธิ์","การกระทำความผิด"]
+
+# def legal_tokenizer(text):
+#     # ใช้ regx จัดการเบื้องต้น ค่อยตัดด้วยส่วนที่เหลืออ
+#     compound = "|".join(map(re.escape,sorted(LEGAL_KEYWORD, key=len, reverse=True)))
+#     pattern = (compound + r"|\u0E00-\u0E7F"+ r"|a-zA-Z0-9")
+#     return re.findall(pattern, text)
 
 def legal_tokenizer(text):
-    # ใช้ regx จัดการเบื้องต้น ค่อยตัดด้วยส่วนที่เหลือ
-    compound = "|".join(map(re.escape,sorted(LEGAL_KEYWORD, key=len, reverse=True)))
-    pattern = (compound + r"|\u0E00-\u0E7F"+ r"|a-zA-Z0-9")
-    return re.findall(pattern, text)
+    # 1.Protect Compound Keywords ด้วย Placeholder
+    sorted_kw = sorted(LEGAL_KEYWORDS,key=len,reverse=True)
+    placeholders = {}
+    protected = text
+    for i, kw in enumerate(sorted_kw):
+        ph = f"__KW{i}__"
+        if kw in protected:
+            placeholders[ph] = kw
+            protected = protected.replace(kw,ph)
+    # 2. tokenize ด้วย pythainlp
+    tokens_raw = word_tokenize(protected,engine="newmm",keep_whitespace=False)
+
+    
+    # 3. restore placeholder
+    return [placeholders.get(t,t) for t in tokens_raw]
 
 
 test_text = "จำเลยกระทำความผิดฐานละเมิดสิทธิบัตรและเครื่องหมายการค้ามาตรา"
@@ -14,7 +35,63 @@ tokens = legal_tokenizer(test_text)
 print(f"Input: {test_text}")
 print(f"Output: {tokens}")
 
+# 2. Context aware Entity Extraction ดึงหน่วย เช่นมาตราอยู่ข้างหน้า 
+def extract_legal_entities(text):
+    entities = []
+    # จำลองหาความผิด ประเภทของ IP (IP_ype) และหาการกระทำ (ACTION)
+    if "สิทธิบัตร" in text:
+        entities.append({"type":"IP_TYPE", "value":"PATENT", "conf":0.95})
+    if "ละเมิด" in text:
+        entities.append({"type":"ACTION", "value":"INFRINGEMENT", "conf":0.85})
+        
+    print(f"this is entity: {entities}")
+    return entities
 
-# ตัดคำด้วย deepcut 
-# import deepcut
-# print(f"Output Deepcut: {deepcut.tokenizer(test_text)}")
+sample = "มีการละเมิดสิทธิบัตรเกิดขึ้นในเขตพื้นที่"
+
+found = extract_legal_entities(sample)
+print("---------- Extract Entity ----------")
+
+print(f"Enitiy Extraction")
+for e in found:
+    print (f"{e["type"]} {e["value"]} (confident: {e["conf"]})")
+    
+    
+# 3 Feture Engineering (TF-IDF) ตัววัดว่าคำนี้สำคัญในเอกสารนี้แค่ไหน (เมื่อเทียบกับเอกสารอื่น)
+from sklearn.feature_extraction.text import TfidfVectorizer
+corpus = [
+    "ละเมิดสิทธิบัตร เครื่องหมายการค้า",
+    "การกระทำความผิด ลิขสิทธิ์",
+    "จำเลย ละเมิด ลิขสิทธิ์"
+]
+
+# สร้าง Vectorizer โดยใช้ Tokenizer ที่สร้างเอง
+vectorizer = TfidfVectorizer(tokenizer=legal_tokenizer, token_pattern=None)
+tfidf_matrix = vectorizer.fit_transform(corpus)
+
+
+# print(f"---TF-IDF--- Vector (Shape: {tfidf_matrix.shape} )")
+# print(f"Vocabulary: {vectorizer.get_feature_names_out()}")
+# print(f"Vector Sample (Doc 1):\n {tfidf_matrix[1].toarray()}")
+
+# 4 Physics Gate Weight (Legal Hierachy)
+def computer_physics_gate_weight(entities):
+    base_weight = 5.0
+    for e in entities:
+        if e["value"] == "PATENT": base_weight += 2.0
+        if e["value"] == "INFRINGEMENT": base_weight += 1.5
+    return min(base_weight, 10.0)
+
+# ทดสอบคำนวนค่านํ้าหนักจาก Entitier แล้วสกัดได้
+weight = computer_physics_gate_weight(found)
+print(f"--Physics Gate Bridge --")
+print(f"Legal Context Weight : {weight:.2f}/10.0")
+print(f"Status: {'Height Alert - Trigger Sensor' if weight > 7 else 'Normal Mornitor'}")
+
+
+# w-1
+
+
+
+
+
