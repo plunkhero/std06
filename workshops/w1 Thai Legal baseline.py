@@ -89,10 +89,10 @@ def analyze_refined_amiguity(text, legal_keywords):
     
 refined_tokens = berta_tokenizer(sample_text)
 refined_rate = analyze_refined_amiguity(sample_text, LEGAL_KEYWORDS)
-print(f"----W1 : Refined with WangchanBerta ----")
+print(f"{'-'*20}W1 : Refined with WangchanBerta{'-'*20}")
 print(f"Token: {refined_tokens}")
 print(f"New Ambiguity Fragmenttation Rate : {refined_rate:.4f}")
-print(f"-----------end of WANGCHANBERTa -------------")
+print(f"{'-'*20}end of WANGCHANBERTa {'-'*20}")
     
             
     

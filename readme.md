@@ -21,7 +21,7 @@ git switch feature/login
 # เหมือน checkout แต่เป็นคำสั่งใหม่ (อ่านง่ายกว่า)
 # ใช้สำหรับสลับ branch
 
-git checkout -b std06-w3
+git checkout -b std06-w
 # สร้าง branch ใหม่ชื่อ feature/login และสลับไปใช้งานทันที
 
 git merge feature/login
